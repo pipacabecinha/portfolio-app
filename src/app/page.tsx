@@ -1,11 +1,8 @@
 import Gallery from "@/components/Gallery";
-import { collectionSortIndex, getPaintings } from "@/lib/paintings";
+import { getSortedPaintings } from "@/lib/paintings";
 
 export default async function Home() {
-  const paintings = await getPaintings();
-  const sorted = [...paintings].sort(
-    (a, b) => collectionSortIndex(a.collection) - collectionSortIndex(b.collection)
-  );
+  const sorted = await getSortedPaintings();
 
   return (
     <main className="flex-1 px-4 sm:px-8 py-8 max-w-6xl w-full mx-auto">

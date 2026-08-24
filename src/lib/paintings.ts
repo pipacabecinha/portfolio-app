@@ -131,6 +131,25 @@ export function collectionSortIndex(collection: string): number {
   return idx === -1 ? COLLECTIONS_ORDER.length : idx;
 }
 
+export async function getSortedPaintings(): Promise<Painting[]> {
+  const paintings = await getPaintings();
+  return [...paintings].sort(
+    (a, b) => collectionSortIndex(a.collection) - collectionSortIndex(b.collection)
+  );
+}
+
+export async function getPaintingNavigation(
+  id: string
+): Promise<{ prev: Painting; next: Painting } | undefined> {
+  const sorted = await getSortedPaintings();
+  const index = sorted.findIndex((p) => p.id === id);
+  if (index === -1) return undefined;
+
+  const prev = sorted[(index - 1 + sorted.length) % sorted.length];
+  const next = sorted[(index + 1) % sorted.length];
+  return { prev, next };
+}
+
 export function factsLine(painting: Painting): string {
   return [painting.medium, formatDimensions(painting.dimensionsCm), painting.year]
     .filter((part) => part && part.length > 0)

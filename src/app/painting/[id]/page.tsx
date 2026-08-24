@@ -1,7 +1,13 @@
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import BackButton from "@/components/BackButton";
-import { factsLine, getPaintingById, getPaintings } from "@/lib/paintings";
+import {
+  factsLine,
+  getPaintingById,
+  getPaintingNavigation,
+  getPaintings,
+} from "@/lib/paintings";
 
 export async function generateStaticParams() {
   const paintings = await getPaintings();
@@ -21,6 +27,7 @@ export default async function PaintingDetail({
   }
 
   const facts = factsLine(painting);
+  const navigation = await getPaintingNavigation(id);
 
   return (
     <main className="flex-1 flex flex-col">
@@ -28,7 +35,7 @@ export default async function PaintingDetail({
         <BackButton />
       </div>
 
-      <div className="w-full">
+      <div className="relative w-full">
         <Image
           src={painting.imageSrc}
           alt={painting.title || "Untitled painting"}
@@ -38,6 +45,24 @@ export default async function PaintingDetail({
           priority
           className="w-full h-auto"
         />
+        {navigation && (
+          <>
+            <Link
+              href={`/painting/${navigation.prev.id}`}
+              aria-label="Previous painting"
+              className="absolute bottom-4 left-4 flex h-10 w-10 items-center justify-center rounded-full bg-ink/60 text-bone backdrop-blur-sm transition-colors hover:bg-ink/80"
+            >
+              <ArrowIcon direction="left" />
+            </Link>
+            <Link
+              href={`/painting/${navigation.next.id}`}
+              aria-label="Next painting"
+              className="absolute bottom-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-ink/60 text-bone backdrop-blur-sm transition-colors hover:bg-ink/80"
+            >
+              <ArrowIcon direction="right" />
+            </Link>
+          </>
+        )}
       </div>
 
       <div className="px-4 sm:px-8 py-6 max-w-2xl mx-auto w-full text-center">
@@ -52,5 +77,26 @@ export default async function PaintingDetail({
         {facts && <p className="mt-2 text-sm text-muted">{facts}</p>}
       </div>
     </main>
+  );
+}
+
+function ArrowIcon({ direction }: { direction: "left" | "right" }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="18"
+      height="18"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {direction === "left" ? (
+        <polyline points="15 18 9 12 15 6" />
+      ) : (
+        <polyline points="9 18 15 12 9 6" />
+      )}
+    </svg>
   );
 }
