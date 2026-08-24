@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+:root {
+  --color-bone: #f6f2ea;
+  --color-ink: #1b1815;
+  --color-muted: #8a8175;
+  --color-line: #e3ddd0;
+}
+
+@theme inline {
+  --color-bone: var(--color-bone);
+  --color-ink: var(--color-ink);
+  --color-muted: var(--color-muted);
+  --color-line: var(--color-line);
+  --font-serif: Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+body {
+  background: var(--color-bone);
+  color: var(--color-ink);
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
