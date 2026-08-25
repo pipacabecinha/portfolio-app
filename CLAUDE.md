@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A pure visual showcase of Filipa Cabecinha's paintings — a mobile-first grid + detail-view catalog, no e-commerce, no auth, no database. It is intentionally minimal: no search, no descriptions/story text, no pricing. See the original spec this was built from, if present, for the full rationale (it was a one-time `build_instructions.md` handed to Claude Code and is not stored in this repo).
 
-Deployed on **Netlify** (not Vercel, despite the default `create-next-app` README/config) — connected to `github.com/pipacabecinha/portfolio-app`, auto-deploys on push to `main`.
+Deployed on **Netlify** (not Vercel, despite the default `create-next-app` README/config) — connected to `github.com/pipacabecinha/portfolio-app`, auto-deploys on push to `main`. Netlify bills deploys against a monthly credit allowance, so `netlify.toml` sets `build.ignore` to skip the deploy entirely when a push only touches `CLAUDE.md`, `AGENTS.md`, or `README.md` (docs with no effect on the built site) — extend that pathspec if another doc-only file is added later.
 
 ## Commands
 
