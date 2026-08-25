@@ -1,5 +1,6 @@
 backend:
-  name: git-gateway
+  name: github
+  repo: pipacabecinha/portfolio-app
   branch: main
 
 publish_mode: simple

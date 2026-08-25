@@ -32,11 +32,11 @@ To add a painting by hand: create a JSON file in `data/paintings/`, matching `co
 
 ### `/admin` — Decap CMS
 
-`public/admin/index.html` + `public/admin/config.yml` set up [Decap CMS](https://decapcms.org/) (loaded from a CDN, not an npm dependency) as a mobile-friendly editor for the two collections above, authenticated via Netlify Identity + Git Gateway (so edits commit straight to `main` and Netlify auto-deploys, without the user needing a GitHub account). `next.config.ts` has a `rewrites()` entry so `/admin` resolves to the static `public/admin/index.html` — Next doesn't serve directory-index files from `public/` on its own. The root layout (`src/app/layout.tsx`) loads the Netlify Identity widget script sitewide so invite/login links that land on `/` work correctly.
+`public/admin/index.html` + `public/admin/config.yml` set up [Decap CMS](https://decapcms.org/) (loaded from a CDN, not an npm dependency) as a mobile-friendly editor for the two collections above. Backend is `github` (`repo: pipacabecinha/portfolio-app`), authenticated via Netlify's built-in GitHub OAuth relay (`https://api.netlify.com/auth/done`) — **not** Netlify Identity + Git Gateway, which Netlify has deprecated (new configurations aren't recommended and won't get bug fixes). Logging in at `/admin` uses the owner's existing GitHub account directly, no separate CMS-only accounts to manage. `next.config.ts` has a `rewrites()` entry so `/admin` resolves to the static `public/admin/index.html` — Next doesn't serve directory-index files from `public/` on its own.
 
 In the CMS: paintings' `collection` field is a `relation` widget pointing at the `collections` collection (so you pick from existing names) — to start a new collection, create it under **Collections** first (name + optional order), then it appears as an option when adding paintings.
 
-Enabling this requires one-time manual setup in the Netlify dashboard (not doable from the repo): Site settings → Identity → Enable Identity, then Identity → Services → Git Gateway → Enable Git Gateway, then invite the user's email as an Identity user.
+Enabling this requires one-time manual setup outside the repo: register a GitHub OAuth App (Authorization callback URL `https://api.netlify.com/auth/done`), then in the Netlify dashboard go to Project configuration → Access & security → OAuth → Authentication Providers → Install Provider → GitHub, and enter that app's Client ID/Secret.
 
 ### `src/lib/collections.ts` vs `src/lib/paintings.ts`
 
