@@ -4,12 +4,16 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import type { Painting } from "@/lib/paintings";
-import { COLLECTIONS_ORDER } from "@/lib/collections";
 
-const FILTERS = ["All", ...COLLECTIONS_ORDER] as const;
-
-export default function Gallery({ paintings }: { paintings: Painting[] }) {
-  const [active, setActive] = useState<(typeof FILTERS)[number]>("All");
+export default function Gallery({
+  paintings,
+  collections,
+}: {
+  paintings: Painting[];
+  collections: string[];
+}) {
+  const filters = useMemo(() => ["All", ...collections], [collections]);
+  const [active, setActive] = useState<string>("All");
 
   const visible = useMemo(
     () => (active === "All" ? paintings : paintings.filter((p) => p.collection === active)),
@@ -19,7 +23,7 @@ export default function Gallery({ paintings }: { paintings: Painting[] }) {
   return (
     <div>
       <nav className="flex gap-5 overflow-x-auto pb-1 -mx-1 px-1 no-scrollbar">
-        {FILTERS.map((filter) => {
+        {filters.map((filter) => {
           const isActive = filter === active;
           return (
             <button

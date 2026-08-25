@@ -22,24 +22,32 @@ There is no test suite configured.
 
 ## Content-as-data architecture
 
-The entire catalog is driven by two things that live outside `src/`, so paintings can be added without touching code:
+The entire catalog is driven by data files that live outside `src/`, so paintings and collections can be added without touching code — either by hand or through the CMS at `/admin` (see below):
 
-- `data/paintings.csv` — single source of truth. Columns: `collection, title, medium, dimensions_cm, year, image_filename`. Blank `title`/`medium`/`dimensions_cm`/`year` are intentional (untitled pieces, minimal collections) — never invent values for them; the rendering code omits blank fields rather than showing empty slots.
-- `public/images/paintings/` — a **flat** directory (no per-collection subfolders). Every `image_filename` in the CSV must be unique across the *entire* catalog, not just within its collection, since this is how images are looked up.
+- `data/paintings/*.json` — one file per painting, filename arbitrary (the CMS names them). Shape: `{ collection, title?, medium?, dimensions_cm?, year?, image }`, where `image` is the public path to the file, e.g. `/images/paintings/Novos caminhos.jpg`. Blank/omitted `title`/`medium`/`dimensions_cm`/`year` are intentional (untitled pieces, minimal collections) — never invent values for them; the rendering code omits blank fields rather than showing empty slots.
+- `data/collections/*.json` — one file per collection. Shape: `{ name, order? }`. `order` controls display/tab order (lower first, ties break alphabetically, missing `order` sorts last); this is the dynamic replacement for the old hardcoded `COLLECTIONS_ORDER` array.
+- `public/images/paintings/` — a **flat** directory (no per-collection subfolders). Every image filename must be unique across the *entire* catalog, not just within its collection, since this is how images are looked up.
 
-To add a painting: append a CSV row + drop the matching image file into that folder, matching `collection` exactly to one of the strings in `src/lib/collections.ts`. No code changes needed.
+To add a painting by hand: create a JSON file in `data/paintings/`, matching `collection` exactly to a `name` in `data/collections/`, and drop the image into `public/images/paintings/`. To add a collection: create a JSON file in `data/collections/`. No code changes needed either way — or just use `/admin`.
+
+### `/admin` — Decap CMS
+
+`public/admin/index.html` + `public/admin/config.yml` set up [Decap CMS](https://decapcms.org/) (loaded from a CDN, not an npm dependency) as a mobile-friendly editor for the two collections above, authenticated via Netlify Identity + Git Gateway (so edits commit straight to `main` and Netlify auto-deploys, without the user needing a GitHub account). `next.config.ts` has a `rewrites()` entry so `/admin` resolves to the static `public/admin/index.html` — Next doesn't serve directory-index files from `public/` on its own. The root layout (`src/app/layout.tsx`) loads the Netlify Identity widget script sitewide so invite/login links that land on `/` work correctly.
+
+In the CMS: paintings' `collection` field is a `relation` widget pointing at the `collections` collection (so you pick from existing names) — to start a new collection, create it under **Collections** first (name + optional order), then it appears as an option when adding paintings.
+
+Enabling this requires one-time manual setup in the Netlify dashboard (not doable from the repo): Site settings → Identity → Enable Identity, then Identity → Services → Git Gateway → Enable Git Gateway, then invite the user's email as an Identity user.
 
 ### `src/lib/collections.ts` vs `src/lib/paintings.ts`
 
-`COLLECTIONS_ORDER` (the fixed, non-alphabetical display order for the 5 collections) lives in its own file, separate from `paintings.ts`, on purpose: `paintings.ts` imports `fs`/`path` and does file I/O, and is imported by the client component `Gallery.tsx` for the collection list. If `Gallery.tsx` imported `COLLECTIONS_ORDER` from `paintings.ts` directly, Next would try to bundle the `fs`-based module into client JS and the build fails (`Module not found: Can't resolve 'fs'`). Keep this split if you touch either file.
+Both now do `fs` file I/O (reading `data/collections/*.json` and `data/paintings/*.json` respectively) and must only ever be imported from server code. The client component `Gallery.tsx` does **not** import either module — it receives `paintings` and `collections` as props from the server component `src/app/page.tsx`. If `Gallery.tsx` imported either module directly, Next would try to bundle `fs` into client JS and the build fails (`Module not found: Can't resolve 'fs'`). Keep this prop-passing split if you touch any of these files.
 
 ### `src/lib/paintings.ts`
 
-- Hand-rolled quoted-CSV parser (no dependency) — fine since the schema is small and controlled.
 - Reads real image pixel dimensions via `image-size` at build/request time (so `next/image` can render at intrinsic size without cropping — paintings are shown uncropped, no `object-fit: cover`).
-- Derives each painting's route id by slugifying `image_filename` (strip extension, strip accents, lowercase, dashes) and de-dupes on collision — this is why filenames must be unique.
+- Derives each painting's route id by slugifying the `image` filename (strip extension, strip accents, lowercase, dashes) and de-dupes on collision — this is why filenames must be unique.
 - `getPaintings()` caches its result in a module-level variable for the process lifetime.
-- `getSortedPaintings()` is the canonical display order (by `COLLECTIONS_ORDER`, otherwise stable) — used by both the home grid and `getPaintingNavigation()`, so ordering is consistent everywhere.
+- `getSortedPaintings()` is the canonical display order (by `data/collections/*.json` order, otherwise stable) — used by both the home grid and `getPaintingNavigation()`, so ordering is consistent everywhere.
 - `getPaintingNavigation(id)` returns `{ prev, next }` with wrap-around, used by the detail-page arrows.
 
 ### Routing

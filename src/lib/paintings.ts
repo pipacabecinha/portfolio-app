@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { imageSizeFromFile } from "image-size/fromFile";
-import { COLLECTIONS_ORDER, type Collection } from "@/lib/collections";
+import { getCollectionsOrder } from "@/lib/collections";
 
 export interface Painting {
   id: string;
@@ -15,57 +15,17 @@ export interface Painting {
   height: number;
 }
 
-const CSV_PATH = path.join(process.cwd(), "data", "paintings.csv");
-const IMAGES_DIR = path.join(process.cwd(), "public", "images", "paintings");
-
-function parseCsvLine(line: string): string[] {
-  const fields: string[] = [];
-  let current = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    if (inQuotes) {
-      if (char === '"') {
-        if (line[i + 1] === '"') {
-          current += '"';
-          i++;
-        } else {
-          inQuotes = false;
-        }
-      } else {
-        current += char;
-      }
-    } else {
-      if (char === '"') {
-        inQuotes = true;
-      } else if (char === ",") {
-        fields.push(current);
-        current = "";
-      } else {
-        current += char;
-      }
-    }
-  }
-  fields.push(current);
-  return fields;
+interface PaintingEntry {
+  collection: string;
+  title?: string;
+  medium?: string;
+  dimensions_cm?: string;
+  year?: string;
+  image: string;
 }
 
-function parseCsv(content: string): Record<string, string>[] {
-  const withoutBom = content.replace(/^﻿/, "");
-  const lines = withoutBom.split(/\r?\n/).filter((line) => line.length > 0);
-  if (lines.length === 0) return [];
-
-  const headers = parseCsvLine(lines[0]);
-  return lines.slice(1).map((line) => {
-    const values = parseCsvLine(line);
-    const row: Record<string, string> = {};
-    headers.forEach((header, i) => {
-      row[header] = (values[i] ?? "").trim();
-    });
-    return row;
-  });
-}
+const PAINTINGS_DIR = path.join(process.cwd(), "data", "paintings");
+const PUBLIC_DIR = path.join(process.cwd(), "public");
 
 const COMBINING_MARKS = new RegExp("[\\u0300-\\u036f]", "g");
 
@@ -84,16 +44,17 @@ let cache: Painting[] | null = null;
 export async function getPaintings(): Promise<Painting[]> {
   if (cache) return cache;
 
-  const csvContent = fs.readFileSync(CSV_PATH, "utf-8");
-  const rows = parseCsv(csvContent);
-
+  const files = fs.readdirSync(PAINTINGS_DIR).filter((f) => f.endsWith(".json"));
   const seenSlugs = new Set<string>();
 
   const paintings = await Promise.all(
-    rows.map(async (row) => {
-      const filename = row.image_filename;
-      const imagePath = path.join(IMAGES_DIR, filename);
-      const dimensions = await imageSizeFromFile(imagePath);
+    files.map(async (file) => {
+      const entry = JSON.parse(
+        fs.readFileSync(path.join(PAINTINGS_DIR, file), "utf-8")
+      ) as PaintingEntry;
+
+      const filename = path.basename(entry.image);
+      const dimensions = await imageSizeFromFile(path.join(PUBLIC_DIR, entry.image));
 
       let slug = slugify(filename);
       if (seenSlugs.has(slug)) {
@@ -105,12 +66,12 @@ export async function getPaintings(): Promise<Painting[]> {
 
       return {
         id: slug,
-        collection: row.collection,
-        title: row.title,
-        medium: row.medium,
-        dimensionsCm: row.dimensions_cm,
-        year: row.year,
-        imageSrc: `/images/paintings/${filename}`,
+        collection: entry.collection,
+        title: entry.title ?? "",
+        medium: entry.medium ?? "",
+        dimensionsCm: entry.dimensions_cm ?? "",
+        year: entry.year ?? "",
+        imageSrc: entry.image,
         width: dimensions.width ?? 1,
         height: dimensions.height ?? 1,
       };
@@ -127,8 +88,9 @@ export async function getPaintingById(id: string): Promise<Painting | undefined>
 }
 
 export function collectionSortIndex(collection: string): number {
-  const idx = COLLECTIONS_ORDER.indexOf(collection as Collection);
-  return idx === -1 ? COLLECTIONS_ORDER.length : idx;
+  const order = getCollectionsOrder();
+  const idx = order.indexOf(collection);
+  return idx === -1 ? order.length : idx;
 }
 
 export async function getSortedPaintings(): Promise<Painting[]> {

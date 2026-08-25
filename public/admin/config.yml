@@ -1,0 +1,43 @@
+backend:
+  name: git-gateway
+  branch: main
+
+publish_mode: simple
+media_folder: "public/images/paintings"
+public_folder: "/images/paintings"
+
+collections:
+  - name: "paintings"
+    label: "Paintings"
+    label_singular: "Painting"
+    folder: "data/paintings"
+    create: true
+    delete: true
+    extension: "json"
+    format: "json"
+    identifier_field: "title"
+    summary: "{{title}} — {{collection}}"
+    sortable_fields: ["title", "year"]
+    fields:
+      - { label: "Collection", name: "collection", widget: "relation", collection: "collections", search_fields: ["name"], display_fields: ["name"], value_field: "name", hint: "Pick an existing collection. To add a new one, create it first under Collections." }
+      - { label: "Title", name: "title", widget: "string", required: false, hint: "Leave blank for an untitled piece." }
+      - { label: "Medium", name: "medium", widget: "string", required: false }
+      - { label: "Dimensions (cm)", name: "dimensions_cm", widget: "string", required: false, hint: "e.g. 55x73cm" }
+      - { label: "Year", name: "year", widget: "string", required: false }
+      - { label: "Image", name: "image", widget: "image", required: true, choose_url: false, media_library: { config: { multiple: false } } }
+
+  - name: "collections"
+    label: "Collections"
+    label_singular: "Collection"
+    folder: "data/collections"
+    create: true
+    delete: true
+    extension: "json"
+    format: "json"
+    identifier_field: "name"
+    slug: "{{fields.name}}"
+    summary: "{{name}}"
+    sortable_fields: ["order", "name"]
+    fields:
+      - { label: "Name", name: "name", widget: "string", hint: "Shown as the filter tab on the site, e.g. \"Winter Collection\"." }
+      - { label: "Order", name: "order", widget: "number", required: false, default: 99, hint: "Controls the tab order on the site — lower numbers appear first. Leave as-is to add it at the end." }

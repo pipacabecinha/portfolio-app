@@ -1,8 +1,10 @@
 import Gallery from "@/components/Gallery";
 import { getSortedPaintings } from "@/lib/paintings";
+import { getCollectionsOrder } from "@/lib/collections";
 
 export default async function Home() {
   const sorted = await getSortedPaintings();
+  const collections = getCollectionsOrder();
 
   return (
     <main className="flex-1 px-4 sm:px-8 py-8 max-w-6xl w-full mx-auto">
@@ -10,7 +12,7 @@ export default async function Home() {
         <p className="text-[11px] uppercase tracking-widest text-muted mb-1">Portfolio</p>
         <h1 className="font-serif text-2xl">Filipa Cabecinha</h1>
       </header>
-      <Gallery paintings={sorted} />
+      <Gallery paintings={sorted} collections={collections} />
     </main>
   );
 }
