@@ -46,7 +46,7 @@ To add a painting: append a CSV row + drop the matching image file into that fol
 
 - `/` (`src/app/page.tsx`) — server component, statically prerendered, fetches all paintings and passes them to `Gallery` (`src/components/Gallery.tsx`), a client component. Collection filtering is pure client-side state (no URL params, no server round-trip) for instant taps on mobile.
 - `/painting/[id]` (`src/app/painting/[id]/page.tsx`) — fully static via `generateStaticParams` (one page per painting). Renders the facts line (`factsLine()` in `paintings.ts`, which joins medium/dimensions/year with " · " and drops blanks) and the prev/next arrow overlay from `getPaintingNavigation`.
-- `BackButton` (`src/components/BackButton.tsx`) is a small client component using `router.back()`.
+- `BackButton` (`src/components/BackButton.tsx`) is a server component that always links to `/` (not `router.back()`) — prev/next arrows on the detail page push new history entries, so after navigating between paintings a history-based back button would step through visited paintings instead of returning to the grid.
 
 ### Visual direction
 
